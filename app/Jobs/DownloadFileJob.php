@@ -7,6 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Storage;
 
 class DownloadFileJob implements ShouldQueue
 {
@@ -38,10 +39,18 @@ class DownloadFileJob implements ShouldQueue
         $url_parcela = 'https://sigef.incra.gov.br/geo/exportar/parcela/csv/' . $this->code . '/';
         $url_vertice = 'https://sigef.incra.gov.br/geo/exportar/vertice/csv/' . $this->code . '/';
 
-        $response_parcela = file_get_contents($url_parcela);
-        file_put_contents(storage_path('download/parcela_' . $this->code . '.csv'), $response_parcela);
-        $response_vertice = file_get_contents($url_vertice);
-        file_put_contents(storage_path('download/vertices_' . $this->code . '.csv'), $response_vertice);
+        $arrContextOptions = [
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+            ],
+        ];
+
+        $response_parcela = file_get_contents($url_parcela, false, stream_context_create($arrContextOptions));
+        Storage::put('download/parcela_' . $this->code . '.csv', $response_parcela);
+
+        $response_vertice = file_get_contents($url_vertice, false, stream_context_create($arrContextOptions));
+        Storage::put('download/vertices_' . $this->code . '.csv', $response_vertice);
 
         dispatch(new InsertFileJob($this->code));
     }
