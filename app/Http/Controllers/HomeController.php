@@ -11,7 +11,7 @@ class HomeController extends Controller
 {
     public function index()
     {
-        return '';
+        return 'ola';
     }
 
     public function init()
@@ -53,9 +53,9 @@ class HomeController extends Controller
         }
 
         return [
-            'exists' => $exists,
-            'donwload' => $donwload,
-            'delete' => $delete,
+            'exists' => count($exists),
+            'donwload' => count($donwload),
+            'delete' => count($delete),
         ];
     }
 }
