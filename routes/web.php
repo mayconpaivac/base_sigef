@@ -16,4 +16,4 @@ Route::get('count', function () {
         'immobiles' => number_format($immobiles, 0, ',', '.'),
         'vertices' => number_format($vertices, 0, ',', '.'),
     ];
-})
+});
