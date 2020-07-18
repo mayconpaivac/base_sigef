@@ -26,7 +26,8 @@ class DownloadFileJob implements ShouldQueue
      */
     public function __construct($code)
     {
-        $this->code = $code;
+        $new_code = str_replace("\n", '', $code);
+        $this->code = str_replace(' ', '', $new_code);
     }
 
     /**
