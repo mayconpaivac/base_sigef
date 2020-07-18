@@ -7,6 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 
 class DownloadFileJob implements ShouldQueue
@@ -40,24 +41,31 @@ class DownloadFileJob implements ShouldQueue
         $url_parcela = 'https://sigef.incra.gov.br/geo/exportar/parcela/csv/' . $this->code . '/';
         $url_vertice = 'https://sigef.incra.gov.br/geo/exportar/vertice/csv/' . $this->code . '/';
 
-        $arrContextOptions = [
-            'ssl' => [
-                'verify_peer' => false,
-                'verify_peer_name' => false,
-            ],
-        ];
-
         if (!Storage::exists('download/parcela_' . $this->code . '.csv')) {
-            $response_parcela = file_get_contents($url_parcela, false, stream_context_create($arrContextOptions));
-            Storage::put('download/parcela_' . $this->code . '.csv', $response_parcela);
+            $response = Http::
+                withoutVerifying()
+                ->withOptions([
+                    'headers' => [
+                        'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36',
+                    ]
+                ])
+                ->get($url_parcela);
+            Storage::put('download/parcela_' . $this->code . '.csv', $response->getBody());
         }
 
         if (!Storage::exists('download/vertices_' . $this->code . '.csv')) {
-            $response_vertice = file_get_contents($url_vertice, false, stream_context_create($arrContextOptions));
-            Storage::put('download/vertices_' . $this->code . '.csv', $response_vertice);
+            $response = Http::
+                withoutVerifying()
+                ->withOptions([
+                    'headers' => [
+                        'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36',
+                    ]
+                ])
+                ->get($url_vertice);
+            Storage::put('download/vertices_' . $this->code . '.csv', $response->getBody());
         }
 
-        if (Storage::exists('download/parcela_' . $this->code . '.csv') or Storage::exists('download/vertices_' . $this->code . '.csv')) {
+        if (Storage::exists('download/parcela_' . $this->code . '.csv') && Storage::exists('download/vertices_' . $this->code . '.csv')) {
             dispatch(new InsertFileJob($this->code));
         } else {
             dispatch(new DownloadFileJob($this->code));

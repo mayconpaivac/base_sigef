@@ -5,13 +5,20 @@ namespace App\Http\Controllers;
 use App\Immobile;
 use App\Jobs\DeleteFileJob;
 use App\Jobs\DownloadFileJob;
+use App\Vertice;
 use Illuminate\Support\LazyCollection;
 
 class HomeController extends Controller
 {
     public function index()
     {
-        return 'ola';
+        $immobiles = Immobile::count();
+        $vertices = Vertice::count();
+
+        return [
+            'immobiles' => number_format($immobiles, 0, ',', '.'),
+            'vertices' => number_format($vertices, 0, ',', '.'),
+        ];
     }
 
     public function init()
