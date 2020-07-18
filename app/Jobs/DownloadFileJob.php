@@ -53,6 +53,10 @@ class DownloadFileJob implements ShouldQueue
         $response_vertice = file_get_contents($url_vertice, false, stream_context_create($arrContextOptions));
         Storage::put('download/vertices_' . $this->code . '.csv', $response_vertice);
 
-        dispatch(new InsertFileJob($this->code));
+        if (Storage::exists('download/parcela_' . $this->code . '.csv') && Storage::exists('download/vertices_' . $this->code . '.csv')) {
+            dispatch(new InsertFileJob($this->code));
+        } else {
+            dispatch(new DownloadFileJob($this->code));
+        }
     }
 }
