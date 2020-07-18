@@ -47,13 +47,17 @@ class DownloadFileJob implements ShouldQueue
             ],
         ];
 
-        $response_parcela = file_get_contents($url_parcela, false, stream_context_create($arrContextOptions));
-        Storage::put('download/parcela_' . $this->code . '.csv', $response_parcela);
+        if (!Storage::exists('download/parcela_' . $this->code . '.csv')) {
+            $response_parcela = file_get_contents($url_parcela, false, stream_context_create($arrContextOptions));
+            Storage::put('download/parcela_' . $this->code . '.csv', $response_parcela);
+        }
 
-        $response_vertice = file_get_contents($url_vertice, false, stream_context_create($arrContextOptions));
-        Storage::put('download/vertices_' . $this->code . '.csv', $response_vertice);
+        if (!Storage::exists('download/vertices_' . $this->code . '.csv')) {
+            $response_vertice = file_get_contents($url_vertice, false, stream_context_create($arrContextOptions));
+            Storage::put('download/vertices_' . $this->code . '.csv', $response_vertice);
+        }
 
-        if (Storage::exists('download/parcela_' . $this->code . '.csv') && Storage::exists('download/vertices_' . $this->code . '.csv')) {
+        if (Storage::exists('download/parcela_' . $this->code . '.csv') or Storage::exists('download/vertices_' . $this->code . '.csv')) {
             dispatch(new InsertFileJob($this->code));
         } else {
             dispatch(new DownloadFileJob($this->code));
