@@ -169,14 +169,14 @@ return [
                 'connection' => 'redis',
                 'queue' => ['default'],
                 'balance' => 'auto',
-                'processes' => 15,
+                'processes' => 30,
                 'tries' => 3,
             ],
             'supervisor-2' => [
                 'connection' => 'redis',
                 'queue' => ['download'],
                 'balance' => 'auto',
-                'processes' => 5,
+                'processes' => 30,
                 'tries' => 3,
             ],
             'supervisor-3' => [
@@ -200,14 +200,14 @@ return [
                 'connection' => 'redis',
                 'queue' => ['default'],
                 'balance' => 'auto',
-                'processes' => 15,
+                'processes' => 30,
                 'tries' => 3,
             ],
             'supervisor-2' => [
                 'connection' => 'redis',
                 'queue' => ['download'],
                 'balance' => 'auto',
-                'processes' => 5,
+                'processes' => 30,
                 'tries' => 3,
             ],
             'supervisor-3' => [
