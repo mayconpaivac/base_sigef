@@ -42,6 +42,11 @@ class InsertFileJob implements ShouldQueue
      */
     public function handle()
     {
+        if (!Storage::exists('download/parcela_' . $this->code . '.csv') && !Storage::exists('download/vertices_' . $this->code . '.csv')) {
+            dispatch(new DownloadFileJob($this->code));
+            return true;
+        }
+
         DB::beginTransaction();
         $csv = LazyCollection::make(function () {
             $handle = fopen(storage_path('app/download/parcela_' . $this->code . '.csv'), 'r');
