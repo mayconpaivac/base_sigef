@@ -51,7 +51,7 @@ class InsertFileJob implements ShouldQueue
         $csv = LazyCollection::make(function () {
             $handle = fopen(storage_path('app/download/parcela_' . $this->code . '.csv'), 'r');
 
-            while (($line = fgetcsv($handle, 100000000, ';')) !== false) {
+            while (($line = fgetcsv($handle, 0, ';')) !== false) {
                 yield $line;
             }
 
@@ -72,7 +72,7 @@ class InsertFileJob implements ShouldQueue
         $csv = LazyCollection::make(function () {
             $handle = fopen(storage_path('app/download/vertices_' . $this->code . '.csv'), 'r');
 
-            while (($line = fgetcsv($handle, 10000000, ';')) !== false) {
+            while (($line = fgetcsv($handle, 0, ';')) !== false) {
                 yield $line;
             }
 
