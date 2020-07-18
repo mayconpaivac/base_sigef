@@ -31,8 +31,7 @@ class InsertFileJob implements ShouldQueue
      */
     public function __construct($code)
     {
-        $new_code = str_replace("\n", '', $code);
-        $this->code = str_replace(' ', '', $new_code);
+        $this->code = preg_replace("/\r|\n/", '', $code);
     }
 
     /**
