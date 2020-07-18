@@ -26,6 +26,7 @@ class DeleteFileJob implements ShouldQueue
     public function __construct(string $code)
     {
         $this->code = preg_replace("/\r|\n/", '', $code);
+        $this->onQueue('delete');
     }
 
     /**

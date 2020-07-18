@@ -177,9 +177,9 @@ return [
         'local' => [
             'supervisor-1' => [
                 'connection' => 'redis',
-                'queue' => ['default'],
+                'queue' => ['default', 'download', 'insert', 'delete'],
                 'balance' => 'auto',
-                'processes' => 10,
+                'processes' => 15,
                 'tries' => 3,
             ],
         ],
