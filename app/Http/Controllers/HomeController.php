@@ -28,7 +28,7 @@ class HomeController extends Controller
             $handle = Storage::disk('spaces')->readStream('codes.txt');
 
             while (($line = fgets($handle)) !== false) {
-                yield $line;
+                yield preg_replace("/\r|\n/", '', $line);
             }
         });
 
