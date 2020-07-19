@@ -180,7 +180,7 @@ return [
                 'queue' => ['default'],
                 'balance' => 'auto',
                 'processes' => 1,
-                'maxProcesses' => 15,
+                'maxProcesses' => 8,
                 'tries' => 3,
             ],
             'supervisor-2' => [
