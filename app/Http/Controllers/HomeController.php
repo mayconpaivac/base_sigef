@@ -6,6 +6,7 @@ use App\Immobile;
 use App\Jobs\DeleteFileJob;
 use App\Jobs\DownloadFileJob;
 use App\Vertice;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\LazyCollection;
 
 class HomeController extends Controller
@@ -24,7 +25,7 @@ class HomeController extends Controller
     public function init()
     {
         $lines = LazyCollection::make(function () {
-            $handle = fopen(storage_path('app/codes.txt'), 'r');
+            $handle = fopen(Storage::disk('spaces')->readStream('app/codes.txt'), 'r');
 
             while (($line = fgets($handle)) !== false) {
                 yield $line;

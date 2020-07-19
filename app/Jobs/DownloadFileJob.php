@@ -41,7 +41,7 @@ class DownloadFileJob implements ShouldQueue
         $url_parcela = 'https://sigef.incra.gov.br/geo/exportar/parcela/csv/' . $this->code . '/';
         $url_vertice = 'https://sigef.incra.gov.br/geo/exportar/vertice/csv/' . $this->code . '/';
 
-        if (!Storage::exists('download/parcela_' . $this->code . '.csv')) {
+        if (!Storage::disk('spaces')->exists('download/parcela_' . $this->code . '.csv')) {
             $response = Http::
                 withoutVerifying()
                 ->withOptions([
@@ -50,10 +50,10 @@ class DownloadFileJob implements ShouldQueue
                     ]
                 ])
                 ->get($url_parcela);
-            Storage::put('download/parcela_' . $this->code . '.csv', $response->getBody());
+            Storage::disk('spaces')->put('download/parcela_' . $this->code . '.csv', $response->getBody());
         }
 
-        if (!Storage::exists('download/vertices_' . $this->code . '.csv')) {
+        if (!Storage::disk('spaces')->exists('download/vertices_' . $this->code . '.csv')) {
             $response = Http::
                 withoutVerifying()
                 ->withOptions([
@@ -62,10 +62,10 @@ class DownloadFileJob implements ShouldQueue
                     ]
                 ])
                 ->get($url_vertice);
-            Storage::put('download/vertices_' . $this->code . '.csv', $response->getBody());
+            Storage::disk('spaces')->put('download/vertices_' . $this->code . '.csv', $response->getBody());
         }
 
-        if (Storage::exists('download/parcela_' . $this->code . '.csv') && Storage::exists('download/vertices_' . $this->code . '.csv')) {
+        if (Storage::disk('spaces')->exists('download/parcela_' . $this->code . '.csv') && Storage::disk('spaces')->exists('download/vertices_' . $this->code . '.csv')) {
             dispatch(new InsertFileJob($this->code));
         } else {
             dispatch(new DownloadFileJob($this->code));
