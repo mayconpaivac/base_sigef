@@ -25,7 +25,7 @@ class HomeController extends Controller
     public function init()
     {
         $lines = LazyCollection::make(function () {
-            $handle = Storage::disk('spaces')->readStream('app/codes.txt');
+            $handle = Storage::disk('spaces')->readStream('codes.txt');
 
             while (($line = fgets($handle)) !== false) {
                 yield $line;
