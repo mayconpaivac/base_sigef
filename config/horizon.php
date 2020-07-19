@@ -179,8 +179,8 @@ return [
                 'connection' => 'redis',
                 'queue' => ['default'],
                 'balance' => 'auto',
-                'minProcesses' => 1,
-                'maxProcesses' => 20,
+                'processes' => 1,
+                'maxProcesses' => 10,
                 'tries' => 3,
             ],
             'supervisor-2' => [
@@ -188,7 +188,7 @@ return [
                 'queue' => ['download'],
                 'balance' => 'auto',
                 'minProcesses' => 1,
-                'maxProcesses' => 20,
+                'maxProcesses' => 10,
                 'tries' => 3,
             ],
             'supervisor-3' => [
@@ -196,7 +196,7 @@ return [
                 'queue' => ['insert'],
                 'balance' => 'auto',
                 'minProcesses' => 1,
-                'maxProcesses' => 5,
+                'maxProcesses' => 3,
                 'tries' => 3,
             ],
             'supervisor-4' => [
@@ -204,7 +204,7 @@ return [
                 'queue' => ['delete'],
                 'balance' => 'auto',
                 'minProcesses' => 1,
-                'maxProcesses' => 5,
+                'maxProcesses' => 3,
                 'tries' => 3,
             ],
         ],
