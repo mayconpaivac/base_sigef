@@ -180,7 +180,7 @@ return [
                 'queue' => ['default'],
                 'balance' => 'auto',
                 'processes' => 1,
-                'maxProcesses' => 10,
+                'maxProcesses' => 5,
                 'tries' => 3,
             ],
             'supervisor-2' => [
@@ -188,7 +188,7 @@ return [
                 'queue' => ['download'],
                 'balance' => 'auto',
                 'minProcesses' => 1,
-                'maxProcesses' => 10,
+                'maxProcesses' => 5,
                 'tries' => 3,
             ],
             'supervisor-3' => [
