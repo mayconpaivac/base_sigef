@@ -190,6 +190,7 @@ return [
                 'minProcesses' => 1,
                 'maxProcesses' => 5,
                 'tries' => 3,
+                'timeout' => 200,
             ],
             'supervisor-3' => [
                 'connection' => 'redis',
