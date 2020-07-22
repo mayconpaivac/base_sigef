@@ -115,7 +115,9 @@ class InsertFileJob implements ShouldQueue
         }
 
         if (!Vertice::where('immobile_id', $immobile->id)->count() > 0) {
-            $immobile->vertices()->insert($data['vertices']);
+            foreach (array_chunk($data['vertices'], 1000) as $vertice) {
+                $immobile->vertices()->insert($vertice);
+            }
         }
 
         DB::commit();
