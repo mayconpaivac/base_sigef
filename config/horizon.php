@@ -188,9 +188,9 @@ return [
                 'queue' => ['download'],
                 'balance' => 'auto',
                 'minProcesses' => 1,
-                'maxProcesses' => 5,
+                'maxProcesses' => 20,
                 'tries' => 3,
-                'timeout' => 200,
+                'timeout' => 300,
             ],
             'supervisor-3' => [
                 'connection' => 'redis',
