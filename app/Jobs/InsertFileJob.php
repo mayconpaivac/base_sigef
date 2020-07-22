@@ -42,14 +42,14 @@ class InsertFileJob implements ShouldQueue
      */
     public function handle()
     {
-        if (!Storage::exists('download/parcela_' . $this->code . '.csv') or !Storage::exists('download/vertices_' . $this->code . '.csv')) {
+        if (!Storage::disk(env('DISK'))->exists('download/parcela_' . $this->code . '.csv') or !Storage::disk(env('DISK'))->exists('download/vertices_' . $this->code . '.csv')) {
             dispatch(new DownloadFileJob($this->code));
             return true;
         }
 
         DB::beginTransaction();
         $csv = LazyCollection::make(function () {
-            $handle = Storage::readStream('download/parcela_' . $this->code . '.csv');
+            $handle = Storage::disk(env('DISK'))->readStream('download/parcela_' . $this->code . '.csv');
 
             while (($line = fgetcsv($handle, 0, ';')) !== false) {
                 yield $line;
@@ -68,7 +68,7 @@ class InsertFileJob implements ShouldQueue
         }
 
         $csv = LazyCollection::make(function () {
-            $handle = Storage::readStream('download/vertices_' . $this->code . '.csv');
+            $handle = Storage::disk(env('DISK'))->readStream('download/vertices_' . $this->code . '.csv');
 
             while (($line = fgetcsv($handle, 0, ';')) !== false) {
                 yield $line;
@@ -120,7 +120,7 @@ class InsertFileJob implements ShouldQueue
 
         DB::commit();
 
-        Storage::delete('download/parcela_' . $this->code . '.csv');
-        Storage::delete('download/vertices_' . $this->code . '.csv');
+        Storage::disk(env('DISK'))->delete('download/parcela_' . $this->code . '.csv');
+        Storage::disk(env('DISK'))->delete('download/vertices_' . $this->code . '.csv');
     }
 }
