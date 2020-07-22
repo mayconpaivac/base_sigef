@@ -188,7 +188,7 @@ return [
                 'queue' => ['download'],
                 'balance' => 'auto',
                 'minProcesses' => 1,
-                'maxProcesses' => 20,
+                'maxProcesses' => 10,
                 'tries' => 3,
                 'timeout' => 300,
             ],
