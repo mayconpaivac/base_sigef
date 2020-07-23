@@ -80,16 +80,16 @@ class InsertFileJob implements ShouldQueue
                 $este = str_replace(',', '.', $line[9]);
                 $norte = str_replace(',', '.', $line[10]);
 
-                if (strstr($este, 'W')) {
+                if (strstr(mb_strtoupper($este), 'W')) {
                     $decimal = new Decimal();
-                    $x = explode(' ', str_replace('W', '', $este));
+                    $x = explode(' ', str_replace('W', '', mb_strtoupper($este)));
                     $deg = $x[0];
                     $min = $x[1];
                     $sec = str_replace(',', '.', $x[2]);
 
                     $longitude = '-' . $decimal->DMStoDEC($deg, $min, $sec);
 
-                    $x = explode(' ', str_replace('S', '', $norte));
+                    $x = explode(' ', str_replace('S', '', mb_strtoupper($norte)));
                     $deg = $x[0];
                     $min = $x[1];
                     $sec = str_replace(',', '.', $x[2]);
