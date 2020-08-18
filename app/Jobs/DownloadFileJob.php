@@ -20,6 +20,11 @@ class DownloadFileJob implements ShouldQueue
     public $code;
 
     /**
+     * @var integer
+     */
+    public $timeout = 900;
+
+    /**
      * Create a new job instance.
      *
      * @param string $code
