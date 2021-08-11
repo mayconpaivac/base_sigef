@@ -56,25 +56,27 @@ class HomeController extends Controller
         foreach ($lines as $line) {
             $line = str_replace("\n", '', $line);
             if ($line) {
-                $news[$line] = $line;
+                $x = explode('(', $line);
+                $x = explode(')', $x[1])[0];
+                $news[$x] = $x;
             }
         }
 
-        $donwload = array_diff_key($news, $olds);
+        $download = array_diff_key($news, $olds);
         $exists = array_intersect_key($news, $olds);
         $delete = array_diff_key($olds, $news);
 
-        foreach ($donwload as $job) {
-            dispatch(new DownloadFileJob($job));
+        foreach ($download as $job) {
+            dispatch(new DownloadFileJob(trim($job)));
         }
 
         foreach ($delete as $job) {
-            dispatch(new DeleteFileJob($job));
+            dispatch(new DeleteFileJob(trim($job)));
         }
 
         return response()->json([
             'exists' => count($exists),
-            'donwload' => count($donwload),
+            'download' => count($download),
             'delete' => count($delete),
         ]);
     }
