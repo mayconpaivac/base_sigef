@@ -82,6 +82,6 @@ class DownloadFileJob implements ShouldQueue
             dispatch(new DownloadFileJob($this->code));
         }
 
-        sleep(5);
+        sleep(3);
     }
 }
