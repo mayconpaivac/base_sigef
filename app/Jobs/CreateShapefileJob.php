@@ -88,7 +88,6 @@ class CreateShapefileJob implements ShouldQueue
                 ->each(function ($immobile) use ($shape) {
                     $points = null;
                     foreach ($immobile->vertices as $key => $vertice) {
-                        logger($immobile->vertices[0]->este);
                         $points[] = new Point($vertice->este, $vertice->norte);
                         if ($key + 1 === count($immobile->vertices)) {
                             $points[] = new Point($immobile->vertices[0]->este, $immobile->vertices[0]->norte);
@@ -98,7 +97,7 @@ class CreateShapefileJob implements ShouldQueue
                     $polyline = new Linestring($points);
 
                     $polyline->setData('codigo', $immobile->code);
-                    $polyline->setData('imovel', $immobile->immobile);
+                    $polyline->setData('imovel', utf8_decode(mb_convert_encoding(str_replace('â€“', '-', $immobile->immobile), 'windows-1252')));
 
                     $shape->writeRecord($polyline);
 
