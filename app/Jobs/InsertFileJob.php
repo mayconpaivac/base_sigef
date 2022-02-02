@@ -98,9 +98,10 @@ class InsertFileJob implements ShouldQueue
                         $latitude = '-' . $decimal->DMStoDEC($deg, $min, $sec);
 
                         $gpoint = new GPointConverter('WGS 84');
-                        $gpoint = $gpoint->convertLatLngToUtm($latitude, $longitude);
+                        $gpoint = $gpoint->convertLatLngToUtm($latitude, $longitude, 20);
                         $este = $gpoint[0];
                         $norte = $gpoint[1];
+                        $zone = $gpoint[2];
                     }
 
                     $data['vertices'][$key - 1]['immobile_id'] = $immobile->id;

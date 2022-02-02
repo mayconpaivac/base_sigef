@@ -47,8 +47,10 @@ class DownloadFileJob implements ShouldQueue
         $url_vertice = 'https://sigef.incra.gov.br/geo/exportar/vertice/csv/' . $this->code . '/';
 
         if (!Storage::disk(env('DISK'))->exists('download/parcela_' . $this->code . '.csv')) {
-            $response = Http::
-                withoutVerifying()
+            $response = Http::withoutVerifying()
+                ->withCookies([
+                    'sessionid' => 'adf80e87e46fca3d8e7c83bb9d10ae73'
+                ], 'sigef.incra.gov.br')
                 ->withOptions([
                     'headers' => [
                         'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36',
@@ -62,8 +64,10 @@ class DownloadFileJob implements ShouldQueue
         }
 
         if (!Storage::disk(env('DISK'))->exists('download/vertices_' . $this->code . '.csv')) {
-            $response = Http::
-                withoutVerifying()
+            $response = Http::withoutVerifying()
+                ->withCookies([
+                    'sessionid' => 'adf80e87e46fca3d8e7c83bb9d10ae73'
+                ], 'sigef.incra.gov.br')
                 ->withOptions([
                     'headers' => [
                         'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36',

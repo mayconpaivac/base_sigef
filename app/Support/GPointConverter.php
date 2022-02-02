@@ -54,7 +54,7 @@ class GPointConverter
      * @param float $latitude
      * @param float $longitude
      */
-    public function convertLatLngToUtm($latitude, $longitude)
+    public function convertLatLngToUtm($latitude, $longitude, $zone = null)
     {
         //Make sure the longitude is between -180.00 .. 179.9
         $LongTemp = ($longitude + 180) - (int) (($longitude + 180) / 360) * 360 - 180; // -180.00 .. 179.9;
@@ -81,6 +81,10 @@ class GPointConverter
             }
         }
 
+        if ($zone) {
+            $ZoneNumber = $zone;
+        }
+
         $LongOrigin = ($ZoneNumber - 1) * 6 - 180 + 3;  //+3 puts origin in middle of zone
         $LongOriginRad = deg2rad($LongOrigin);
 
@@ -94,16 +98,16 @@ class GPointConverter
         $A = cos($LatRad) * ($LongRad - $LongOriginRad);
 
         $M = $this->a * ((1 - $this->eccSquared / 4 - 3 * $this->eccSquared * $this->eccSquared / 64 - 5 * $this->eccSquared * $this->eccSquared * $this->eccSquared / 256) * $LatRad
-                    - (3 * $this->eccSquared / 8 + 3 * $this->eccSquared * $this->eccSquared / 32 + 45 * $this->eccSquared * $this->eccSquared * $this->eccSquared / 1024) * sin(2 * $LatRad)
-                                        + (15 * $this->eccSquared * $this->eccSquared / 256 + 45 * $this->eccSquared * $this->eccSquared * $this->eccSquared / 1024) * sin(4 * $LatRad)
-                                        - (35 * $this->eccSquared * $this->eccSquared * $this->eccSquared / 3072) * sin(6 * $LatRad));
+            - (3 * $this->eccSquared / 8 + 3 * $this->eccSquared * $this->eccSquared / 32 + 45 * $this->eccSquared * $this->eccSquared * $this->eccSquared / 1024) * sin(2 * $LatRad)
+            + (15 * $this->eccSquared * $this->eccSquared / 256 + 45 * $this->eccSquared * $this->eccSquared * $this->eccSquared / 1024) * sin(4 * $LatRad)
+            - (35 * $this->eccSquared * $this->eccSquared * $this->eccSquared / 3072) * sin(6 * $LatRad));
 
         $UTMEasting = (float)(self::K0 * $N * ($A + (1 - $T + $C) * $A * $A * $A / 6
-                        + (5 - 18 * $T + $T * $T + 72 * $C - 58 * $eccPrimeSquared) * $A * $A * $A * $A * $A / 120)
-                        + 500000.0);
+            + (5 - 18 * $T + $T * $T + 72 * $C - 58 * $eccPrimeSquared) * $A * $A * $A * $A * $A / 120)
+            + 500000.0);
 
         $UTMNorthing = (float)(self::K0 * ($M + $N * tan($LatRad) * ($A * $A / 2 + (5 - $T + 9 * $C + 4 * $C * $C) * $A * $A * $A * $A / 24
-                     + (61 - 58 * $T + $T * $T + 600 * $C - 330 * $eccPrimeSquared) * $A * $A * $A * $A * $A * $A / 720)));
+            + (61 - 58 * $T + $T * $T + 600 * $C - 330 * $eccPrimeSquared) * $A * $A * $A * $A * $A * $A / 720)));
         if ($latitude < 0) {
             $UTMNorthing += 10000000.0;
         } //10000000 meter offset for southern hemisphere
@@ -136,10 +140,10 @@ class GPointConverter
         sscanf($UTMZone, '%d%s', $ZoneNumber, $ZoneLetter);
 
         if (strcmp('N', $ZoneLetter) <= 0) {
-            $NorthernHemisphere = 1;//point is in northern hemisphere
+            $NorthernHemisphere = 1; //point is in northern hemisphere
         } else {
-            $NorthernHemisphere = 0;//point is in southern hemisphere
-            $y -= 10000000.0;//remove 10,000,000 meter offset used for southern hemisphere
+            $NorthernHemisphere = 0; //point is in southern hemisphere
+            $y -= 10000000.0; //remove 10,000,000 meter offset used for southern hemisphere
         }
 
         $LongOrigin = ($ZoneNumber - 1) * 6 - 180 + 3;  //+3 puts origin in middle of zone
@@ -150,8 +154,8 @@ class GPointConverter
         $mu = $M / ($this->a * (1 - $this->eccSquared / 4 - 3 * $this->eccSquared * $this->eccSquared / 64 - 5 * $this->eccSquared * $this->eccSquared * $this->eccSquared / 256));
 
         $phi1Rad = $mu + (3 * $e1 / 2 - 27 * $e1 * $e1 * $e1 / 32) * sin(2 * $mu)
-                    + (21 * $e1 * $e1 / 16 - 55 * $e1 * $e1 * $e1 * $e1 / 32) * sin(4 * $mu)
-                    + (151 * $e1 * $e1 * $e1 / 96) * sin(6 * $mu);
+            + (21 * $e1 * $e1 / 16 - 55 * $e1 * $e1 * $e1 * $e1 / 32) * sin(4 * $mu)
+            + (151 * $e1 * $e1 * $e1 / 96) * sin(6 * $mu);
         $phi1 = rad2deg($phi1Rad);
 
         $N1 = $this->a / sqrt(1 - $this->eccSquared * sin($phi1Rad) * sin($phi1Rad));
@@ -161,11 +165,11 @@ class GPointConverter
         $D = $x / ($N1 * self::K0);
 
         $Lat = $phi1Rad - ($N1 * tan($phi1Rad) / $R1) * ($D * $D / 2 - (5 + 3 * $T1 + 10 * $C1 - 4 * $C1 * $C1 - 9 * $eccPrimeSquared) * $D * $D * $D * $D / 24
-                        + (61 + 90 * $T1 + 298 * $C1 + 45 * $T1 * $T1 - 252 * $eccPrimeSquared - 3 * $C1 * $C1) * $D * $D * $D * $D * $D * $D / 720);
+            + (61 + 90 * $T1 + 298 * $C1 + 45 * $T1 * $T1 - 252 * $eccPrimeSquared - 3 * $C1 * $C1) * $D * $D * $D * $D * $D * $D / 720);
         $Lat = rad2deg($Lat);
 
         $Long = ($D - (1 + 2 * $T1 + $C1) * $D * $D * $D / 6 + (5 - 2 * $C1 + 28 * $T1 - 3 * $C1 * $C1 + 8 * $eccPrimeSquared + 24 * $T1 * $T1)
-                        * $D * $D * $D * $D * $D / 120) / cos($phi1Rad);
+            * $D * $D * $D * $D * $D / 120) / cos($phi1Rad);
         $Long = $LongOrigin + rad2deg($Long);
         return [$Lat, $Long];
     }
@@ -185,29 +189,98 @@ class GPointConverter
     public function setEllipsoid($name)
     {
         switch ($name) {
-            case 'Airy': $this->a = 6377563;$this->eccSquared = 0.00667054;break;
-            case 'Australian National': $this->a = 6378160;$this->eccSquared = 0.006694542;break;
-            case 'Bessel 1841': $this->a = 6377397;$this->eccSquared = 0.006674372;break;
-            case 'Bessel 1841 Nambia': $this->a = 6377484;$this->eccSquared = 0.006674372;break;
-            case 'Clarke 1866': $this->a = 6378206;$this->eccSquared = 0.006768658;break;
-            case 'Clarke 1880': $this->a = 6378249;$this->eccSquared = 0.006803511;break;
-            case 'Everest': $this->a = 6377276;$this->eccSquared = 0.006637847;break;
-            case 'Fischer 1960 Mercury': $this->a = 6378166;$this->eccSquared = 0.006693422;break;
-            case 'Fischer 1968': $this->a = 6378150;$this->eccSquared = 0.006693422;break;
-            case 'GRS 1967': $this->a = 6378160;$this->eccSquared = 0.006694605;break;
-            case 'GRS 1980': $this->a = 6378137;$this->eccSquared = 0.00669438;break;
-            case 'Helmert 1906': $this->a = 6378200;$this->eccSquared = 0.006693422;break;
-            case 'Hough': $this->a = 6378270;$this->eccSquared = 0.00672267;break;
-            case 'International': $this->a = 6378388;$this->eccSquared = 0.00672267;break;
-            case 'Krassovsky': $this->a = 6378245;$this->eccSquared = 0.006693422;break;
-            case 'Modified Airy': $this->a = 6377340;$this->eccSquared = 0.00667054;break;
-            case 'Modified Everest': $this->a = 6377304;$this->eccSquared = 0.006637847;break;
-            case 'Modified Fischer 1960': $this->a = 6378155;$this->eccSquared = 0.006693422;break;
-            case 'South American 1969': $this->a = 6378160;$this->eccSquared = 0.006694542;break;
-            case 'WGS 60': $this->a = 6378165;$this->eccSquared = 0.006693422;break;
-            case 'WGS 66': $this->a = 6378145;$this->eccSquared = 0.006694542;break;
-            case 'WGS 72': $this->a = 6378135;$this->eccSquared = 0.006694318;break;
-            case 'ED50': $this->a = 6378388;$this->eccSquared = 0.00672267;break; // International Ellipsoid
+            case 'Airy':
+                $this->a = 6377563;
+                $this->eccSquared = 0.00667054;
+                break;
+            case 'Australian National':
+                $this->a = 6378160;
+                $this->eccSquared = 0.006694542;
+                break;
+            case 'Bessel 1841':
+                $this->a = 6377397;
+                $this->eccSquared = 0.006674372;
+                break;
+            case 'Bessel 1841 Nambia':
+                $this->a = 6377484;
+                $this->eccSquared = 0.006674372;
+                break;
+            case 'Clarke 1866':
+                $this->a = 6378206;
+                $this->eccSquared = 0.006768658;
+                break;
+            case 'Clarke 1880':
+                $this->a = 6378249;
+                $this->eccSquared = 0.006803511;
+                break;
+            case 'Everest':
+                $this->a = 6377276;
+                $this->eccSquared = 0.006637847;
+                break;
+            case 'Fischer 1960 Mercury':
+                $this->a = 6378166;
+                $this->eccSquared = 0.006693422;
+                break;
+            case 'Fischer 1968':
+                $this->a = 6378150;
+                $this->eccSquared = 0.006693422;
+                break;
+            case 'GRS 1967':
+                $this->a = 6378160;
+                $this->eccSquared = 0.006694605;
+                break;
+            case 'GRS 1980':
+                $this->a = 6378137;
+                $this->eccSquared = 0.00669438;
+                break;
+            case 'Helmert 1906':
+                $this->a = 6378200;
+                $this->eccSquared = 0.006693422;
+                break;
+            case 'Hough':
+                $this->a = 6378270;
+                $this->eccSquared = 0.00672267;
+                break;
+            case 'International':
+                $this->a = 6378388;
+                $this->eccSquared = 0.00672267;
+                break;
+            case 'Krassovsky':
+                $this->a = 6378245;
+                $this->eccSquared = 0.006693422;
+                break;
+            case 'Modified Airy':
+                $this->a = 6377340;
+                $this->eccSquared = 0.00667054;
+                break;
+            case 'Modified Everest':
+                $this->a = 6377304;
+                $this->eccSquared = 0.006637847;
+                break;
+            case 'Modified Fischer 1960':
+                $this->a = 6378155;
+                $this->eccSquared = 0.006693422;
+                break;
+            case 'South American 1969':
+                $this->a = 6378160;
+                $this->eccSquared = 0.006694542;
+                break;
+            case 'WGS 60':
+                $this->a = 6378165;
+                $this->eccSquared = 0.006693422;
+                break;
+            case 'WGS 66':
+                $this->a = 6378145;
+                $this->eccSquared = 0.006694542;
+                break;
+            case 'WGS 72':
+                $this->a = 6378135;
+                $this->eccSquared = 0.006694318;
+                break;
+            case 'ED50':
+                $this->a = 6378388;
+                $this->eccSquared = 0.00672267;
+                break; // International Ellipsoid
             case 'WGS 84':
             case 'EUREF89': // Max deviation from WGS 84 is 40 cm/km see http://ocq.dk/euref89 (in danish)
             case 'ETRS89': // Same as EUREF89
@@ -228,27 +301,48 @@ class GPointConverter
     public static function getUtmLetterDesignator($latitude)
     {
         switch ($latitude) {
-            case ((84 >= $latitude) && ($latitude >= 72)): return 'X';
-            case ((72 > $latitude) && ($latitude >= 64)): return 'W';
-            case ((64 > $latitude) && ($latitude >= 56)): return 'V';
-            case ((56 > $latitude) && ($latitude >= 48)): return 'U';
-            case ((48 > $latitude) && ($latitude >= 40)): return 'T';
-            case ((40 > $latitude) && ($latitude >= 32)): return 'S';
-            case ((32 > $latitude) && ($latitude >= 24)): return 'R';
-            case ((24 > $latitude) && ($latitude >= 16)): return 'Q';
-            case ((16 > $latitude) && ($latitude >= 8)): return 'P';
-            case ((8 > $latitude) && ($latitude >= 0)): return 'N';
-            case ((0 > $latitude) && ($latitude >= -8)): return 'M';
-            case ((-8 > $latitude) && ($latitude >= -16)): return 'L';
-            case ((-16 > $latitude) && ($latitude >= -24)): return 'K';
-            case ((-24 > $latitude) && ($latitude >= -32)): return 'J';
-            case ((-32 > $latitude) && ($latitude >= -40)): return 'H';
-            case ((-40 > $latitude) && ($latitude >= -48)): return 'G';
-            case ((-48 > $latitude) && ($latitude >= -56)): return 'F';
-            case ((-56 > $latitude) && ($latitude >= -64)): return 'E';
-            case ((-64 > $latitude) && ($latitude >= -72)): return 'D';
-            case ((-72 > $latitude) && ($latitude >= -80)): return 'C';
-            default: return 'Z';
+            case ((84 >= $latitude) && ($latitude >= 72)):
+                return 'X';
+            case ((72 > $latitude) && ($latitude >= 64)):
+                return 'W';
+            case ((64 > $latitude) && ($latitude >= 56)):
+                return 'V';
+            case ((56 > $latitude) && ($latitude >= 48)):
+                return 'U';
+            case ((48 > $latitude) && ($latitude >= 40)):
+                return 'T';
+            case ((40 > $latitude) && ($latitude >= 32)):
+                return 'S';
+            case ((32 > $latitude) && ($latitude >= 24)):
+                return 'R';
+            case ((24 > $latitude) && ($latitude >= 16)):
+                return 'Q';
+            case ((16 > $latitude) && ($latitude >= 8)):
+                return 'P';
+            case ((8 > $latitude) && ($latitude >= 0)):
+                return 'N';
+            case ((0 > $latitude) && ($latitude >= -8)):
+                return 'M';
+            case ((-8 > $latitude) && ($latitude >= -16)):
+                return 'L';
+            case ((-16 > $latitude) && ($latitude >= -24)):
+                return 'K';
+            case ((-24 > $latitude) && ($latitude >= -32)):
+                return 'J';
+            case ((-32 > $latitude) && ($latitude >= -40)):
+                return 'H';
+            case ((-40 > $latitude) && ($latitude >= -48)):
+                return 'G';
+            case ((-48 > $latitude) && ($latitude >= -56)):
+                return 'F';
+            case ((-56 > $latitude) && ($latitude >= -64)):
+                return 'E';
+            case ((-64 > $latitude) && ($latitude >= -72)):
+                return 'D';
+            case ((-72 > $latitude) && ($latitude >= -80)):
+                return 'C';
+            default:
+                return 'Z';
         }
     }
 }

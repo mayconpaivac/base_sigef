@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', 'HomeController@index');
@@ -12,20 +13,14 @@ Route::get('teste', 'TesteController@index');
 Route::get('aff', 'TesteController@aff');
 
 Route::get('teste2', function () {
-    $bo = file_get_contents(storage_path('app/bo.txt'));
-
-    $bos = explode("\n", $bo);
-
-    foreach ($bos as $bo) {
-        $code = trim($bo);
-        if (!file_exists(storage_path('app/13/' . $code . '_p.csv'))) {
-            $parcela = file_get_contents('https://sigef.incra.gov.br/geo/exportar/parcela/csv/' . trim($bo) . '/');
-            file_put_contents(storage_path('app/13/' . trim($bo) . '_p.csv'), $parcela);
-        }
-
-        if (!file_exists(storage_path('app/13/' . $code . '_v.csv'))) {
-            $vertices = file_get_contents('https://sigef.incra.gov.br/geo/exportar/vertice/csv/' . trim($bo) . '/');
-            file_put_contents(storage_path('app/13/' . trim($bo) . '_v.csv'), $vertices);
-        }
-    }
+    return $response = Http::withoutVerifying()
+        ->withCookies([
+            'sessionid' => 'adf80e87e46fca3d8e7c83bb9d10ae73'
+        ], 'sigef.incra.gov.br')
+        ->withOptions([
+            'headers' => [
+                'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36',
+            ]
+        ])
+        ->get('https://sigef.incra.gov.br/geo/exportar/parcela/csv/4c6897b0-d8ca-47da-9149-fcad117fe266');
 });
