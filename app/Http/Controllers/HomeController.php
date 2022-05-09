@@ -23,10 +23,7 @@ class HomeController extends Controller
         $immobiles = Immobile::count();
         $vertices = Vertice::count();
 
-        return response()->json([
-            'immobiles' => number_format($immobiles, 0, ',', '.'),
-            'vertices' => number_format($vertices, 0, ',', '.'),
-        ]);
+        return view('index', compact('immobiles', 'vertices'));
     }
 
     /**
@@ -90,9 +87,6 @@ class HomeController extends Controller
     {
         dispatch(new CreateShapefileJob());
 
-        return response()->json([
-            'success' => true,
-            'message' => 'JOB despachada com sucesso.',
-        ]);
+        return back();
     }
 }

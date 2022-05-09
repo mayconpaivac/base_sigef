@@ -5,6 +5,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', 'HomeController@index');
 
+Route::post('/file', 'ProcessFormController@file')->name('processFile');
+
+Route::post('/link', 'ProcessFormController@link');
+
 Route::get('init', 'HomeController@init');
 
 Route::get('shape', 'HomeController@shape');
