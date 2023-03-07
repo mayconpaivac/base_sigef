@@ -12,6 +12,13 @@ Route::get('init', 'HomeController@init');
 
 Route::get('shape', 'HomeController@shape');
 
+
+Route::get('/delete-batch', function () {
+    Batch::query()->delete();
+
+    return 'ok';
+});
+
 Route::get('/batch', function () {
     $batch = Batch::query()->latest()->first();
 

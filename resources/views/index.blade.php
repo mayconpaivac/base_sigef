@@ -88,7 +88,7 @@
             </div>
 
             <div class="col-md-12 pt-3" id="btn-download" style="display: none">
-                <a href="/storage/parcelas.zip" class="btn btn-secondary">Download Shape</a>
+                <a href="/storage/parcelas.zip" id="download" class="btn btn-secondary">Download Shape</a>
             </div>
         </main>
         <footer class="pt-5 my-5 text-muted border-top">
@@ -107,6 +107,13 @@
         const btnShape = document.getElementById('btn-shape');
         const btnDownload = document.getElementById('btn-download');
         const title = document.getElementById('title');
+
+        const download = document.getElementById('download');
+
+        download.addEventListener('click', async () => {
+            btnDownload.style.display = 'none';
+            const response = await fetch('/delete-batch');
+        });
 
         async function getBatch() {
             const response = await fetch('/batch');

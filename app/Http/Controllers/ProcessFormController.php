@@ -15,6 +15,8 @@ class ProcessFormController extends Controller
 {
     public function file(Request $request)
     {
+        Storage::disk(env('DISK'))->delete('public/parcelas.zip');
+
         if ($request->hasFile('file')) {
             $request->file('file')->move(storage_path('app'), 'file.html');
         } else {
