@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Batch;
 use App\Immobile;
 use App\Jobs\CreateShapefileJob;
 use App\Jobs\DeleteFileJob;
 use App\Jobs\DownloadFileJob;
 use App\Vertice;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\LazyCollection;
 use Shapefile\Shapefile;
@@ -85,7 +87,14 @@ class HomeController extends Controller
      */
     public function shape()
     {
-        dispatch(new CreateShapefileJob());
+        $bus = Bus::batch([
+            new CreateShapefileJob(),
+        ])->name('Create shapefile')->dispatch();
+
+        Batch::create([
+            'type' => 'shapefile',
+            'batch_id' => $bus->id,
+        ]);
 
         return back();
     }

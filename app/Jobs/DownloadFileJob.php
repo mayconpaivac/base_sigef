@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -12,7 +13,11 @@ use Illuminate\Support\Facades\Storage;
 
 class DownloadFileJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
+    use Batchable;
 
     /**
      * @var string
@@ -81,9 +86,9 @@ class DownloadFileJob implements ShouldQueue
         }
 
         if (Storage::disk(env('DISK'))->exists('download/parcela_' . $this->code . '.csv') && Storage::disk(env('DISK'))->exists('download/vertices_' . $this->code . '.csv')) {
-            dispatch(new InsertFileJob($this->code));
+            $this->batch()->add(new InsertFileJob($this->code));
         } else {
-            dispatch(new DownloadFileJob($this->code));
+            $this->batch()->add(new DownloadFileJob($this->code));
         }
 
         sleep(1);

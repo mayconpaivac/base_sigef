@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Batch;
 use App\Immobile;
 use App\Jobs\DeleteFileJob;
 use App\Jobs\DownloadFileJob;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 
@@ -59,17 +61,26 @@ class ProcessFormController extends Controller
         $exists = array_intersect_key($news, $olds);
         $delete = array_diff_key($olds, $news);
 
-        foreach ($download as $job) {
-            dispatch(new DownloadFileJob(trim($job)));
-        }
+        if (count($download) > 0 || count($delete) > 0) {
+            $bus = Bus::batch([])->name('Download files')->dispatch();
+            foreach ($download as $job) {
+                $bus->add(new DownloadFileJob(trim($job)));
+            }
 
-        foreach ($delete as $job) {
-            dispatch(new DeleteFileJob(trim($job)));
+            foreach ($delete as $job) {
+                $bus->add(new DeleteFileJob(trim($job)));
+            }
+
+            Batch::query()->create([
+                'type' => 'download',
+                'batch_id' => $bus->id,
+            ]);
         }
 
         Storage::delete('file.html');
 
-        return back()->with([
+        return redirect('/')->with([
+            'link' => $request->post('link'),
             'total_download' => count($download),
             'total_exists' => count($exists),
             'total_delete' => count($delete),

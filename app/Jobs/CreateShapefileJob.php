@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Immobile;
 use App\Vertice;
+use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -18,7 +19,11 @@ use Shapefile\ShapefileWriter;
 
 class CreateShapefileJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
+    use Batchable;
 
     /**
      * @var integer
@@ -47,6 +52,23 @@ class CreateShapefileJob implements ShouldQueue
         $this->constructPolygons();
         $this->constructVertices();
 
+        $zip = new \ZipArchive();
+        $zip->open(storage_path('app/public/parcelas.zip'), \ZipArchive::CREATE);
+
+        @mkdir(storage_path('app/public/shape/'));
+        $dir = opendir(storage_path('app/public/shape/'));
+
+        while ($file = readdir($dir)) {
+            if (is_file(storage_path('app/public/shape/').$file)) {
+                $zip->addFile(storage_path('app/public/shape/').$file, $file);
+            }
+        }
+        $zip->close();
+
+        closedir($dir);
+
+        Storage::disk(env('DISK'))->deleteDirectory('public/shape/');
+
         $memory_used = $this->formatBytes(memory_get_usage());
         $memory_used_max = $this->formatBytes(memory_get_peak_usage());
         $time = now()->diffInSeconds($start_time);
@@ -67,13 +89,7 @@ class CreateShapefileJob implements ShouldQueue
     private function constructPolygons()
     {
         try {
-            Storage::disk(env('DISK'))->delete([
-                'public/parcelas.shp',
-                'public/parcelas.dbf',
-                'public/parcelas.shx',
-            ]);
-
-            $shape = new ShapefileWriter(storage_path('app/public/parcelas.shp'));
+            $shape = new ShapefileWriter(storage_path('app/public/shape/parcelas.shp'));
             $shape->setShapeType(Shapefile::SHAPE_TYPE_POLYLINE);
 
             $shape->addCharField('codigo');
@@ -121,16 +137,7 @@ class CreateShapefileJob implements ShouldQueue
     private function constructVertices()
     {
         try {
-            Storage::disk(env('DISK'))->delete([
-                'public/vertices.cpg',
-                'public/vertices.dbf',
-                'public/vertices.dbt',
-                'public/vertices.prj',
-                'public/vertices.shp',
-                'public/vertices.shx',
-            ]);
-
-            $shapefile = new ShapefileWriter(storage_path('app/public/vertices.shp'));
+            $shapefile = new ShapefileWriter(storage_path('app/public/shape/vertices.shp'));
 
             $shapefile->setShapeType(Shapefile::SHAPE_TYPE_POINT);
 

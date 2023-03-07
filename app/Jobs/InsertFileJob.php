@@ -6,6 +6,7 @@ use App\Immobile;
 use App\Support\Decimal;
 use App\Support\GPointConverter;
 use App\Vertice;
+use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -17,7 +18,11 @@ use Illuminate\Support\LazyCollection;
 
 class InsertFileJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
+    use Batchable;
 
     /**
      * @var string
@@ -58,9 +63,9 @@ class InsertFileJob implements ShouldQueue
             });
 
             foreach ($csv as $key => $line) {
-                if ($key !== 0) {
+                if ($key === 1) {
                     $data['code'] = $line[0];
-                    $data['immobile'] = $line[1];
+                    $data['immobile'] = str_replace("\n", "", $line[1]) ?: '-';
 
                     if (!$immobile = Immobile::where('code', $data['code'])->first()) {
                         $immobile = Immobile::create($data);
@@ -78,30 +83,24 @@ class InsertFileJob implements ShouldQueue
 
             foreach ($csv as $key => $line) {
                 if ($key !== 0) {
-                    $este = str_replace(',', '.', $line[9]);
-                    $norte = str_replace(',', '.', $line[10]);
+                    $pointXY = $line[12];
+                    preg_match_all("/[-+]?[0-9]\d*(\.\d+)/", $pointXY, $result);
+                    $longitude = $result[0][0];
+                    $latitude = $result[0][1];
 
-                    if (strstr(mb_strtoupper($este), 'W')) {
-                        $decimal = new Decimal();
-                        $x = explode(' ', str_replace('W', '', mb_strtoupper($este)));
-                        $deg = $x[0];
-                        $min = $x[1];
-                        $sec = str_replace(',', '.', $x[2]);
+                    $gpoint = new GPointConverter('WGS 84');
+                    $gpoint = $gpoint->convertLatLngToUtm($latitude, $longitude);
+                    $este = $gpoint[0];
+                    $norte = $gpoint[1];
+                    $zone = $gpoint[2];
 
-                        $longitude = '-' . $decimal->DMStoDEC($deg, $min, $sec);
-
-                        $x = explode(' ', str_replace('S', '', mb_strtoupper($norte)));
-                        $deg = $x[0];
-                        $min = $x[1];
-                        $sec = str_replace(',', '.', $x[2]);
-
-                        $latitude = '-' . $decimal->DMStoDEC($deg, $min, $sec);
-
+                    if ($zone !== '20L') {
                         $gpoint = new GPointConverter('WGS 84');
-                        $gpoint = $gpoint->convertLatLngToUtm($latitude, $longitude, 20);
+                        [$lat, $lng] = $gpoint->convertUtmToLatLng($este, $norte, $zone);
+                        $gpoint = new GPointConverter('WGS 84');
+                        $gpoint = $gpoint->convertLatLngToUtm($lat, $lng, 20);
                         $este = $gpoint[0];
                         $norte = $gpoint[1];
-                        $zone = $gpoint[2];
                     }
 
                     $data['vertices'][$key - 1]['immobile_id'] = $immobile->id;
@@ -122,13 +121,14 @@ class InsertFileJob implements ShouldQueue
                 }
             }
 
-            DB::commit();
-
             Storage::disk(env('DISK'))->delete('download/parcela_' . $this->code . '.csv');
             Storage::disk(env('DISK'))->delete('download/vertices_' . $this->code . '.csv');
+
+            DB::commit();
         } catch (\Exception $e) {
             logger()->error($this->code);
             logger()->error($e);
+            DB::rollBack();
         }
     }
 }
