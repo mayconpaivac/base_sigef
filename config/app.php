@@ -15,6 +15,8 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    'session_id' => env('SESSION_ID'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

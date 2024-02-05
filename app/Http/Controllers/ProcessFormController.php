@@ -22,7 +22,7 @@ class ProcessFormController extends Controller
         } else {
             $response = Http::withoutVerifying()
                 ->withCookies([
-                    'sessionid' => '8e0350b2bf8e04d5db48957f97b6b0e2'
+                    'sessionid' =>  config('app.session_id')
                 ], 'sigef.incra.gov.br')
                 ->withOptions([
                     'headers' => [
@@ -30,6 +30,10 @@ class ProcessFormController extends Controller
                     ]
                 ])
                 ->get($request->post('link'));
+
+            if (strstr($response->body(), 'https://sso.acesso.gov.br/authorize')) {
+                throw new \Exception('Token do sigef "sessionid" expirado.');
+            }
 
             file_put_contents(storage_path('app/file.html'), $response->body());
         }

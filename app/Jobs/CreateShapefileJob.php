@@ -48,6 +48,7 @@ class CreateShapefileJob implements ShouldQueue
     public function handle()
     {
         $start_time = now();
+        @mkdir(storage_path('app/public/shape/'), 777, true);
 
         $this->constructPolygons();
         $this->constructVertices();
@@ -55,7 +56,6 @@ class CreateShapefileJob implements ShouldQueue
         $zip = new \ZipArchive();
         $zip->open(storage_path('app/public/parcelas.zip'), \ZipArchive::CREATE);
 
-        @mkdir(storage_path('app/public/shape/'));
         $dir = opendir(storage_path('app/public/shape/'));
 
         while ($file = readdir($dir)) {

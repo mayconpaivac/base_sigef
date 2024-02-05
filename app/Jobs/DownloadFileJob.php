@@ -54,7 +54,7 @@ class DownloadFileJob implements ShouldQueue
         if (!Storage::disk(env('DISK'))->exists('download/parcela_' . $this->code . '.csv')) {
             $response = Http::withoutVerifying()
                 ->withCookies([
-                    'sessionid' => '8e0350b2bf8e04d5db48957f97b6b0e2'
+                    'sessionid' => config('app.session_id'),
                 ], 'sigef.incra.gov.br')
                 ->withOptions([
                     'headers' => [
@@ -71,7 +71,7 @@ class DownloadFileJob implements ShouldQueue
         if (!Storage::disk(env('DISK'))->exists('download/vertices_' . $this->code . '.csv')) {
             $response = Http::withoutVerifying()
                 ->withCookies([
-                    'sessionid' => '8e0350b2bf8e04d5db48957f97b6b0e2'
+                    'sessionid' => config('app.session_id'),
                 ], 'sigef.incra.gov.br')
                 ->withOptions([
                     'headers' => [
