@@ -17,10 +17,14 @@ class ProcessFormController extends Controller
     {
         Storage::disk(env('DISK'))->delete('public/parcelas.zip');
 
+        set_time_limit(300);
+
+
         if ($request->hasFile('file')) {
             $request->file('file')->move(storage_path('app'), 'file.html');
         } else {
             $response = Http::withoutVerifying()
+                ->timeout(300)
                 ->withCookies([
                     'sessionid' =>  config('app.session_id')
                 ], 'sigef.incra.gov.br')
@@ -38,43 +42,39 @@ class ProcessFormController extends Controller
             file_put_contents(storage_path('app/file.html'), $response->body());
         }
 
-        $file = file(storage_path('app/file.html'));
-
+        $handle = fopen(storage_path('app/file.html'), 'r');
         $news = [];
 
-        foreach ($file as $line) {
-            preg_match_all("/\w{8}-\w{4}-\w{4}-\w{4}-\w{12}/", $line, $results);
-
-            if (!empty($results[0])) {
-                $uuid = array_unique($results[0])[0];
-                if ($uuid === strtolower($uuid)) {
-                    $news[$uuid] = $uuid;
+        if ($handle) {
+            while (!feof($handle)) {
+                $line = fgets($handle);
+                if (preg_match("/\w{8}-\w{4}-\w{4}-\w{4}-\w{12}/", $line, $results)) {
+                    $uuid = array_unique($results)[0];
+                    $news[] = trim($uuid);
                 }
             }
+            fclose($handle);
         }
 
-        array_shift($news);
+        $collectNews = collect($news)->except([0, 1])->values()->unique();
 
-        $immobiles = Immobile::cursor()->pluck('code');
+        $immobiles = Immobile::get()->pluck('code');
 
-        $olds = [];
+        $delete = $immobiles->diff($collectNews);
+        $exists = $immobiles->intersect($collectNews);
+        $download = $collectNews->diff($immobiles);
 
-        foreach ($immobiles as $immobile) {
-            $olds[$immobile] = $immobile;
-        }
+        if ($download->count()) {
+            $bus = Bus::batch([])->name('Download files')->finally(function (\Illuminate\Bus\Batch $batch) {
+                Batch::query()->where('batch_id', $batch->id)->update(['finished_at' => now()]);
+            })->onQueue('download')->dispatch();
 
-        $download = array_diff_key($news, $olds);
-        $exists = array_intersect_key($news, $olds);
-        $delete = array_diff_key($olds, $news);
-
-        if (count($download) > 0 || count($delete) > 0) {
-            $bus = Bus::batch([])->name('Download files')->dispatch();
-            foreach ($download as $job) {
+            foreach ($download->toArray() as $job) {
                 $bus->add(new DownloadFileJob(trim($job)));
             }
 
-            foreach ($delete as $job) {
-                $bus->add(new DeleteFileJob(trim($job)));
+            foreach ($delete->toArray() as $job) {
+                dispatch(new DeleteFileJob(trim($job)))->onQueue('delete');
             }
 
             Batch::query()->create([

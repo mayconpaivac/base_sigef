@@ -76,6 +76,7 @@
 
             <h3 class="mt-5" id="title" style="display: none"></h3>
 
+            <span id="percentage2"></span>
             <div class="progress mb-3" id="progress" style="display: none;">
                 <div class="progress-bar progress-bar-striped progress-bar-animated" id="progress-bar"
                     role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
@@ -104,6 +105,7 @@
         const progressBar = document.getElementById('progress-bar');
         const progress = document.getElementById('progress');
         const percentage = document.getElementById('percentage');
+        const percentage2 = document.getElementById('percentage2');
         const btnShape = document.getElementById('btn-shape');
         const btnDownload = document.getElementById('btn-download');
         const title = document.getElementById('title');
@@ -119,9 +121,21 @@
             const response = await fetch('/batch');
             const data = await response.json();
 
+            console.log(data)
+
             if (data.model.type === 'download' && !data.batch.finishedAt) {
                 title.style.display = 'block';
-                title.innerHTML = `Processando arquivo ${data.batch.processedJobs} de ${data.batch.totalJobs}...`;
+                title.innerHTML = `Baixando arquivo ${data.batch.processedJobs} de ${data.batch.totalJobs}...`;
+            }
+
+            if (data.model.type === 'insert' && !data.batch.finishedAt) {
+                title.style.display = 'block';
+                title.innerHTML = `Inserindo arquivo ${data.batch.processedJobs} de ${data.batch.totalJobs}...`;
+            }
+
+            if (data.model.type === 'delete' && !data.batch.finishedAt) {
+                title.style.display = 'block';
+                title.innerHTML = `Deletando arquivo ${data.batch.processedJobs} de ${data.batch.totalJobs}...`;
             }
 
             if (data.model.type === 'shapefile') {
@@ -147,10 +161,11 @@
                 }
             }
 
-            if (data.batch.progress > 0 && !data.batch.finishedAt) {
+            if (data.batch.processedJobs > 0 && !data.batch.finishedAt) {
                 progress.style.display = 'block';
                 progressBar.style.width = `${data.batch.progress}%`;
                 percentage.innerHTML = `${data.batch.progress}%`;
+                percentage2.innerHTML = `${data.batch.progress}%`;
             }
         }
 

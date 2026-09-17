@@ -12,5 +12,10 @@ class Batch extends Model
     protected $fillable = [
         'type',
         'batch_id',
+        'finished_at',
+    ];
+
+    protected $dates = [
+        'finished_at',
     ];
 }

@@ -102,23 +102,41 @@ class CreateShapefileJob implements ShouldQueue
             ])
                 ->cursor()
                 ->each(function ($immobile) use ($shape) {
-                    $points = null;
-                    foreach ($immobile->vertices as $key => $vertice) {
-                        $points[] = new Point($vertice->este, $vertice->norte);
-                        if ($key + 1 === count($immobile->vertices)) {
-                            $points[] = new Point($immobile->vertices[0]->este, $immobile->vertices[0]->norte);
-                        }
+                    if ($immobile->vertices->isEmpty()) {
+                        logger()->warning("Immobile sem vértices ignorado: {$immobile->code}");
+                        return;
                     }
 
-                    $polyline = new Linestring($points);
+                    try {
+                        $hasInvalidCoord = $immobile->vertices->contains(function ($v) {
+                            return is_null($v->este) || is_null($v->norte) || !is_numeric($v->este) || !is_numeric($v->norte);
+                        });
 
-                    $polyline->setData('codigo', $immobile->code);
-                    $polyline->setData('imovel', utf8_decode(mb_convert_encoding(str_replace('â€“', '-', $immobile->immobile), 'windows-1252')));
+                        if ($hasInvalidCoord) {
+                            logger()->warning("Imóvel com coordenada inválida ignorado: {$immobile->code}");
+                            return;
+                        }
 
-                    $shape->writeRecord($polyline);
+                        $points = null;
+                        foreach ($immobile->vertices as $key => $vertice) {
+                            $points[] = new Point($vertice->este, $vertice->norte);
+                            if ($key + 1 === count($immobile->vertices)) {
+                                $points[] = new Point($immobile->vertices[0]->este, $immobile->vertices[0]->norte);
+                            }
+                        }
 
-                    $polyline = null;
-                    $points = null;
+                        $polyline = new Linestring($points);
+
+                        $polyline->setData('codigo', $immobile->code);
+                        $polyline->setData('imovel', utf8_decode(mb_convert_encoding(str_replace('â€”', '-', $immobile->immobile), 'windows-1252')));
+
+                        $shape->writeRecord($polyline);
+
+                        $polyline = null;
+                        $points = null;
+                    } catch (ShapefileException $e) {
+                        logger()->error("Erro ao processar imóvel {$immobile->code}: " . $e->getMessage() . ' | ' . $e->getDetails());
+                    }
                 });
 
             $shape = null;

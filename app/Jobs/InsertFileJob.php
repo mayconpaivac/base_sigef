@@ -6,6 +6,7 @@ use App\Immobile;
 use App\Support\Decimal;
 use App\Support\GPointConverter;
 use App\Vertice;
+use Illuminate\Bus\Batch;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -24,19 +25,9 @@ class InsertFileJob implements ShouldQueue
     use SerializesModels;
     use Batchable;
 
-    /**
-     * @var string
-     */
-    public $code;
-
-    /**
-     * Create a new job instance.
-     *
-     * @return void
-     */
-    public function __construct($code)
+    public function __construct(protected string $code)
     {
-        $this->code = preg_replace("/\r|\n/", '', $code);
+        $this->code = trim(preg_replace("/\r|\n/", '', $code));
         $this->onQueue('insert');
     }
 
@@ -48,8 +39,13 @@ class InsertFileJob implements ShouldQueue
     public function handle()
     {
         try {
-            if (!Storage::disk(env('DISK'))->exists('download/parcela_' . $this->code . '.csv') or !Storage::disk(env('DISK'))->exists('download/vertices_' . $this->code . '.csv')) {
-                dispatch(new DownloadFileJob($this->code));
+            if (
+                (!Storage::disk(env('DISK'))->exists('download/parcela_' . $this->code . '.csv')
+                or !Storage::disk(env('DISK'))->exists('download/vertices_' . $this->code . '.csv'))
+                || (str_contains(Storage::disk(env('DISK'))->get('download/parcela_' . $this->code . '.csv'), 'The requested URL was rejected.')
+                or str_contains(Storage::disk(env('DISK'))->get('download/vertices_' . $this->code . '.csv'), 'The requested URL was rejected.'))
+            ) {
+                $this->batch()->add(new DownloadFileJob($this->code));
                 return true;
             }
 
@@ -83,25 +79,34 @@ class InsertFileJob implements ShouldQueue
 
             foreach ($csv as $key => $line) {
                 if ($key !== 0) {
-                    $pointXY = $line[12];
-                    preg_match_all("/[-+]?[0-9]\d*(\.\d+)/", $pointXY, $result);
-                    $longitude = $result[0][0];
-                    $latitude = $result[0][1];
-
                     $gpoint = new GPointConverter('WGS 84');
-                    $gpoint = $gpoint->convertLatLngToUtm($latitude, $longitude);
-                    $este = $gpoint[0];
-                    $norte = $gpoint[1];
-                    $zone = $gpoint[2];
 
-                    if ($zone !== '20L') {
-                        $gpoint = new GPointConverter('WGS 84');
-                        [$lat, $lng] = $gpoint->convertUtmToLatLng($este, $norte, $zone);
-                        $gpoint = new GPointConverter('WGS 84');
-                        $gpoint = $gpoint->convertLatLngToUtm($lat, $lng, 20);
-                        $este = $gpoint[0];
-                        $norte = $gpoint[1];
+                    if (str_contains($line[9], 'W') or str_contains($line[10], 'S')) {
+                        // Convert DMS to Decimal
+                        // "60 13 33,761 W" or "7 59 57,492 S" (degree not always zero-padded)
+                        $long = preg_split('/\s+/', trim($line[9]));
+                        $longDeg = $long[0];
+                        $longMin = $long[1];
+                        $longSec = str_replace(',', '.', $long[2]);
+
+                        $lat = preg_split('/\s+/', trim($line[10]));
+                        $latDeg = $lat[0];
+                        $latMin = $lat[1];
+                        $latSec = str_replace(',', '.', $lat[2]);
+
+                        $decimal = new Decimal();
+
+                        $latitude = $decimal->DMStoDEC((float) $latDeg, (float) $latMin, (float) $latSec);
+                        $longitude = $decimal->DMStoDEC((float) $longDeg, (float) $longMin, (float) $longSec);
+
+                        $result = $gpoint->convertLatLngToUtm(-1 * $latitude, -1 * $longitude, 20);
+                    } else {
+                        // X/Y columns are already projected UTM coordinates (este/norte), not lat/lng
+                        $result = [str_replace(',', '.', $line[9]), str_replace(',', '.', $line[10])];
                     }
+
+                    $este = $result[0];
+                    $norte = $result[1];
 
                     $data['vertices'][$key - 1]['immobile_id'] = $immobile->id;
                     $data['vertices'][$key - 1]['vertice'] = $line[1];
@@ -115,6 +120,7 @@ class InsertFileJob implements ShouldQueue
                 }
             }
 
+
             if (!Vertice::where('immobile_id', $immobile->id)->count() > 0) {
                 foreach (array_chunk($data['vertices'], 1000) as $vertice) {
                     $immobile->vertices()->insert($vertice);
@@ -123,6 +129,8 @@ class InsertFileJob implements ShouldQueue
 
             Storage::disk(env('DISK'))->delete('download/parcela_' . $this->code . '.csv');
             Storage::disk(env('DISK'))->delete('download/vertices_' . $this->code . '.csv');
+
+            echo 'Inserted ' . $this->code . PHP_EOL;
 
             DB::commit();
         } catch (\Exception $e) {

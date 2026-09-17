@@ -20,7 +20,7 @@ Route::get('/delete-batch', function () {
 });
 
 Route::get('/batch', function () {
-    $batch = Batch::query()->latest()->first();
+    $batch = Batch::query()->latest()->whereNull('finished_at')->first();
 
     if (!$batch) {
         return [

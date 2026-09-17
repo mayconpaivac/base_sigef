@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use Illuminate\Bus\Batch;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -20,22 +21,11 @@ class DownloadFileJob implements ShouldQueue
     use Batchable;
 
     /**
-     * @var string
-     */
-    public $code;
-
-    /**
      * @var integer
      */
     public $timeout = 900;
 
-    /**
-     * Create a new job instance.
-     *
-     * @param string $code
-     * @return void
-     */
-    public function __construct($code)
+    public function __construct(protected string $code)
     {
         $this->code = preg_replace("/\r|\n/", '', $code);
         $this->onQueue('download');
@@ -51,7 +41,12 @@ class DownloadFileJob implements ShouldQueue
         $url_parcela = 'https://sigef.incra.gov.br/geo/exportar/parcela/csv/' . $this->code . '/';
         $url_vertice = 'https://sigef.incra.gov.br/geo/exportar/vertice/csv/' . $this->code . '/';
 
-        if (!Storage::disk(env('DISK'))->exists('download/parcela_' . $this->code . '.csv')) {
+        echo 'https://sigef.incra.gov.br/geo/parcela/detalhe/' . $this->code . '/' . PHP_EOL;
+
+        if (
+            !Storage::disk(env('DISK'))->exists('download/parcela_' . $this->code . '.csv')
+            || str_contains(Storage::disk(env('DISK'))->get('download/parcela_' . $this->code . '.csv'), 'The requested URL was rejected.')
+        ) {
             $response = Http::withoutVerifying()
                 ->withCookies([
                     'sessionid' => config('app.session_id'),
@@ -68,7 +63,10 @@ class DownloadFileJob implements ShouldQueue
             }
         }
 
-        if (!Storage::disk(env('DISK'))->exists('download/vertices_' . $this->code . '.csv')) {
+        if (
+            !Storage::disk(env('DISK'))->exists('download/vertices_' . $this->code . '.csv')
+            || str_contains(Storage::disk(env('DISK'))->get('download/vertices_' . $this->code . '.csv'), 'The requested URL was rejected.')
+        ) {
             $response = Http::withoutVerifying()
                 ->withCookies([
                     'sessionid' => config('app.session_id'),
@@ -85,11 +83,17 @@ class DownloadFileJob implements ShouldQueue
             }
         }
 
-        if (Storage::disk(env('DISK'))->exists('download/parcela_' . $this->code . '.csv') && Storage::disk(env('DISK'))->exists('download/vertices_' . $this->code . '.csv')) {
-            $this->batch()->add(new InsertFileJob($this->code));
+        if (
+            (Storage::disk(env('DISK'))->exists('download/parcela_' . $this->code . '.csv') && Storage::disk(env('DISK'))->exists('download/vertices_' . $this->code . '.csv'))
+            && (!str_contains(Storage::disk(env('DISK'))->get('download/parcela_' . $this->code . '.csv'), 'The requested URL was rejected.')
+            && !str_contains(Storage::disk(env('DISK'))->get('download/vertices_' . $this->code . '.csv'), 'The requested URL was rejected.'))
+        ) {
+            dispatch(new InsertFileJob($this->code))->onQueue('insert');
         } else {
             $this->batch()->add(new DownloadFileJob($this->code));
         }
+
+        echo 'Download: ' . $this->code . PHP_EOL;
 
         sleep(1);
     }
